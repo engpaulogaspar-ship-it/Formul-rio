@@ -970,12 +970,7 @@
     // ============================================
     const condicionantesIniciais = [
       "O esgoto sanitário deverá ser encaminhado para a fossa séptica e semidouro ou para rede coletora pública.",
-      "Disposição e destinação adequadas dos resíduos sólidos e líquidos.",
-      "",
-      "",
-      "",
-      "",
-      ""
+      "Disposição e destinação adequadas dos resíduos sólidos e líquidos."
     ];
     
     const checklistIniciais = [
@@ -1743,24 +1738,6 @@
         pdf.setTextColor(0, 0, 0);
         pdf.text(cargo, marginLeft + 45, yPos);
         yPos += 15;
-        
-        // Linha de assinatura CENTRALIZADA
-        pdf.setLineWidth(0.5);
-        pdf.line(posicaoXCentro, yPos, posicaoXCentro + larguraLinhaAssinatura, yPos);
-        
-        // Texto "Assinatura" acima da linha
-        pdf.setFontSize(8);
-        pdf.setTextColor(100, 100, 100);
-        pdf.text('Assinatura', posicaoXCentro + (larguraLinhaAssinatura / 2), yPos - 3, { align: 'center' });
-        yPos += 5;
-        
-        // Nome do vistoriador ABAIXO da linha
-        if (vistoriador !== '________________') {
-          pdf.setFontSize(9);
-          pdf.setFont("helvetica", "normal");
-          pdf.setTextColor(0, 0, 0);
-          pdf.text(vistoriador, posicaoXCentro + (larguraLinhaAssinatura / 2), yPos + 5, { align: 'center' });
-        }
         
         // Adicionar rodapé em todas as páginas
         const totalPaginas = pdf.internal.getNumberOfPages();

@@ -936,6 +936,7 @@
     const PDF_CONFIG = {
       relatorioText: {
         linha1: "DIVISÃO DE LICENCIAMENTO ESTRATÉGICO",
+        linha2: "",
         linha3: "RELATÓRIO DE VISTORIA TÉCNICA"
       },
       footerText: {
@@ -1113,7 +1114,7 @@
     }
     
     function removerCondicionante(index) {
-      if (condicionantes.length <= 7) {
+      if (condicionantes.length <= 2) {
         mostrarStatus('Não é possível remover as condicionantes padrão.', 'info');
         return;
       }
@@ -1152,20 +1153,22 @@
         const row = document.createElement('tr');
         row.id = `cond_row_${index}`;
         
-        const isCustom = index >= condicionantesIniciais.length || condicionantesIniciais[index] === "";
+        const isCustom = index >= condicionantesIniciais.length;
         
         let conteudoCelula = '';
         if (isCustom) {
           conteudoCelula = `
             <td>
-              <input type="text" class="form-control condicionante-input" 
-                     placeholder="Digite a condicionante" 
-                     id="cond_custom_${index}"
-                     value="${cond || ''}">
-              ${index >= condicionantesIniciais.length ? 
-                `<button type="button" class="btn-remove no-print" onclick="removerCondicionante(${index})">
+              <div style="display: flex; align-items: center; gap: 10px;">
+                <input type="text" class="form-control condicionante-input" 
+                       placeholder="Digite a condicionante" 
+                       id="cond_custom_${index}"
+                       value="${cond || ''}"
+                       style="flex: 1;">
+                <button type="button" class="btn-remove no-print" onclick="removerCondicionante(${index})">
                   <i class="fas fa-trash"></i> Remover
-                </button>` : ''}
+                </button>
+              </div>
             </td>
           `;
         } else {
@@ -1221,13 +1224,16 @@
         if (isCustom) {
           conteudoCelula = `
             <td>
-              <input type="text" class="form-control checklist-input" 
-                     placeholder="Digite o item do checklist" 
-                     id="check_custom_${index}"
-                     value="${item || ''}">
-              <button type="button" class="btn-remove no-print" onclick="removerChecklistItem(${index})">
-                <i class="fas fa-trash"></i> Remover
-              </button>
+              <div style="display: flex; align-items: center; gap: 10px;">
+                <input type="text" class="form-control checklist-input" 
+                       placeholder="Digite o item do checklist" 
+                       id="check_custom_${index}"
+                       value="${item || ''}"
+                       style="flex: 1;">
+                <button type="button" class="btn-remove no-print" onclick="removerChecklistItem(${index})">
+                  <i class="fas fa-trash"></i> Remover
+                </button>
+              </div>
             </td>
           `;
         } else {
@@ -1298,7 +1304,6 @@
         cargo: document.getElementById('cargo').value,
         condicionantes: [],
         checklist: [],
-        // Salvar também os arrays dinâmicos
         condicionantesArray: condicionantes,
         checklistArray: checklistItems
       };
@@ -1403,7 +1408,7 @@
     }
     
     // ============================================
-    // FUNÇÃO GERAR PDF - ATUALIZADA PARA ITENS DINÂMICOS
+    // FUNÇÃO GERAR PDF - CORRIGIDA
     // ============================================
     function gerarPDF() {
       try {
@@ -1415,7 +1420,12 @@
         }
         
         const { jsPDF } = window.jspdf;
-        const pdf = new jsPDF('p', 'mm', 'a4');
+        const pdf = new jsPDF({
+          orientation: 'p',
+          unit: 'mm',
+          format: 'a4'
+        });
+        
         const pageWidth = 210;
         const marginLeft = 20;
         const marginRight = 20;
@@ -1470,9 +1480,8 @@
           if (LOGOS.footerLogo) {
             try {
               const lineWidth = pageWidth - marginLeft - marginRight;
-              const lineHeight = 2;
               const lineY = 270;
-              pdf.addImage(LOGOS.footerLogo, 'PNG', marginLeft, lineY, lineWidth, lineHeight);
+              pdf.addImage(LOGOS.footerLogo, 'PNG', marginLeft, lineY, lineWidth, 2);
             } catch (e) {
               pdf.setLineWidth(0.5);
               pdf.setDrawColor(...PDF_CONFIG.colors.primary);
@@ -1486,7 +1495,7 @@
           
           // Texto do rodapé
           pdf.setFontSize(7);
-          pdf.setFont("helvetica", "normal");
+          pdf.setFont('helvetica', 'normal');
           pdf.setTextColor(...PDF_CONFIG.colors.darkGray);
           
           pdf.text(PDF_CONFIG.footerText.linha1, marginLeft, 278);
@@ -1500,7 +1509,7 @@
         const verificarNovaPagina = (alturaNecessaria) => {
           if (yPos + alturaNecessaria > 250) {
             const paginaAtual = pdf.internal.getNumberOfPages();
-            adicionarRodape(paginaAtual, paginaAtual + 1);
+            adicionarRodape(paginaAtual, paginaAtual);
             pdf.addPage();
             adicionarCabecalho();
             yPos = 40;
@@ -1514,10 +1523,10 @@
           pdf.setFillColor(...PDF_CONFIG.colors.primary);
           pdf.rect(marginLeft, linhaY, pageWidth - marginLeft - marginRight, 8, 'F');
           pdf.setTextColor(255, 255, 255);
-          pdf.setFont("helvetica", "bold");
+          pdf.setFont('helvetica', 'bold');
           pdf.setFontSize(9);
           pdf.text('CONDICIONANTES', marginLeft + 5, linhaY + 5);
-          pdf.text('ATENDE', pageWidth - marginRight - 15, linhaY + 5);
+          pdf.text('ATENDE', pageWidth - marginRight - 15, linhaY + 5, { align: 'center' });
           return linhaY + 8;
         };
         
@@ -1526,10 +1535,10 @@
           pdf.setFillColor(...PDF_CONFIG.colors.secondary);
           pdf.rect(marginLeft, linhaY, pageWidth - marginLeft - marginRight, 8, 'F');
           pdf.setTextColor(255, 255, 255);
-          pdf.setFont("helvetica", "bold");
+          pdf.setFont('helvetica', 'bold');
           pdf.setFontSize(9);
           pdf.text('CHECK-LIST IN-LOCO', marginLeft + 5, linhaY + 5);
-          pdf.text('ATENDE', pageWidth - marginRight - 15, linhaY + 5);
+          pdf.text('ATENDE', pageWidth - marginRight - 15, linhaY + 5, { align: 'center' });
           return linhaY + 8;
         };
         
@@ -1539,44 +1548,36 @@
         
         // Título do relatório
         pdf.setFontSize(16);
-        pdf.setFont("helvetica", "bold");
+        pdf.setFont('helvetica', 'bold');
         pdf.setTextColor(...PDF_CONFIG.colors.primary);
         pdf.text(PDF_CONFIG.relatorioText.linha1, pageWidth / 2, yPos, { align: 'center' });
         yPos += 8;
         pdf.setFontSize(14);
-        pdf.text(PDF_CONFIG.relatorioText.linha2, pageWidth / 2, yPos, { align: 'center' });
-        yPos += 8;
-        pdf.setFontSize(12);
-        pdf.setTextColor(0, 0, 0);
         pdf.text(PDF_CONFIG.relatorioText.linha3, pageWidth / 2, yPos, { align: 'center' });
         yPos += 12;
         
         // Informações básicas
         pdf.setFontSize(11);
-        pdf.setFont("helvetica", "bold");
+        pdf.setFont('helvetica', 'bold');
         pdf.setTextColor(...PDF_CONFIG.colors.primary);
         const empreendimento = document.getElementById('empreendimento').value || 'Não informado';
         const protocolo = document.getElementById('protocolo').value || 'Não informado';
         const dataVistoria = document.getElementById('dataVistoria').value || 'Não informada';
         
         pdf.text('EMPREENDIMENTO:', marginLeft, yPos);
-        pdf.setFont("helvetica", "normal");
+        pdf.setFont('helvetica', 'normal');
         pdf.setTextColor(0, 0, 0);
         pdf.text(empreendimento, marginLeft + 45, yPos);
         yPos += 7;
         
-        pdf.setFont("helvetica", "bold");
-        pdf.setTextColor(...PDF_CONFIG.colors.primary);
         pdf.text('PROTOCOLO:', marginLeft, yPos);
-        pdf.setFont("helvetica", "normal");
+        pdf.setFont('helvetica', 'normal');
         pdf.setTextColor(0, 0, 0);
         pdf.text(protocolo, marginLeft + 45, yPos);
         yPos += 7;
         
-        pdf.setFont("helvetica", "bold");
-        pdf.setTextColor(...PDF_CONFIG.colors.primary);
         pdf.text('DATA:', marginLeft, yPos);
-        pdf.setFont("helvetica", "normal");
+        pdf.setFont('helvetica', 'normal');
         pdf.setTextColor(0, 0, 0);
         pdf.text(dataVistoria, marginLeft + 45, yPos);
         yPos += 15;
@@ -1584,7 +1585,7 @@
         // Seção 1: Condicionantes
         verificarNovaPagina(30);
         pdf.setFontSize(12);
-        pdf.setFont("helvetica", "bold");
+        pdf.setFont('helvetica', 'bold');
         pdf.setTextColor(...PDF_CONFIG.colors.primary);
         pdf.text('1. ATENDIMENTO ÀS CONDICIONANTES:', marginLeft, yPos);
         yPos += 10;
@@ -1601,7 +1602,7 @@
           
           if (linhaY > 250) {
             const paginaAtual = pdf.internal.getNumberOfPages();
-            adicionarRodape(paginaAtual, paginaAtual + 1);
+            adicionarRodape(paginaAtual, paginaAtual);
             pdf.addPage();
             adicionarCabecalho();
             linhaY = 40;
@@ -1618,15 +1619,15 @@
           }
           
           pdf.setTextColor(0, 0, 0);
-          pdf.setFont("helvetica", "normal");
-          const lines = pdf.splitTextToSize(textoCond, 120);
+          pdf.setFont('helvetica', 'normal');
+          const lines = pdf.splitTextToSize(textoCond, 110);
           for (let j = 0; j < lines.length; j++) {
-            pdf.text(lines[j], marginLeft + 5, linhaY + (j * 4) + 4);
+            pdf.text(lines[j], marginLeft + 5, linhaY + (j * 4) + 5);
           }
           
-          pdf.setFont("helvetica", "bold");
-          pdf.text(atendeText, pageWidth - marginRight - 15, linhaY + 4);
-          linhaY += Math.max(8, lines.length * 4);
+          pdf.setFont('helvetica', 'bold');
+          pdf.text(atendeText, pageWidth - marginRight - 15, linhaY + 5, { align: 'center' });
+          linhaY += Math.max(8, lines.length * 4 + 2);
         }
         
         yPos = linhaY + 10;
@@ -1634,7 +1635,7 @@
         // Seção 2: Checklist
         verificarNovaPagina(30);
         pdf.setFontSize(12);
-        pdf.setFont("helvetica", "bold");
+        pdf.setFont('helvetica', 'bold');
         pdf.setTextColor(...PDF_CONFIG.colors.primary);
         pdf.text('2. RELATÓRIO DE CONFORMIDADE:', marginLeft, yPos);
         yPos += 10;
@@ -1646,18 +1647,18 @@
         // Dados do checklist (incluindo os dinâmicos)
         pdf.setFontSize(9);
         for (let i = 0; i < checklistItems.length; i++) {
+          const item = checklistItems[i];
+          if (!item || !item.trim()) continue;
+          
           if (linhaY > 250) {
             const paginaAtual = pdf.internal.getNumberOfPages();
-            adicionarRodape(paginaAtual, paginaAtual + 1);
+            adicionarRodape(paginaAtual, paginaAtual);
             pdf.addPage();
             adicionarCabecalho();
             linhaY = 40;
             linhaY = adicionarCabecalhoChecklist(linhaY);
             pdf.setFontSize(9);
           }
-          
-          const item = checklistItems[i];
-          if (!item || !item.trim()) continue;
           
           const radioValue = document.querySelector(`input[name="check_${i}"]:checked`)?.value;
           const atendeText = radioValue ? radioValue.toUpperCase() : 'NÃO AVALIADO';
@@ -1668,15 +1669,15 @@
           }
           
           pdf.setTextColor(0, 0, 0);
-          pdf.setFont("helvetica", "normal");
-          const lines = pdf.splitTextToSize(item, 120);
+          pdf.setFont('helvetica', 'normal');
+          const lines = pdf.splitTextToSize(item, 110);
           for (let j = 0; j < lines.length; j++) {
-            pdf.text(lines[j], marginLeft + 5, linhaY + (j * 4) + 4);
+            pdf.text(lines[j], marginLeft + 5, linhaY + (j * 4) + 5);
           }
           
-          pdf.setFont("helvetica", "bold");
-          pdf.text(atendeText, pageWidth - marginRight - 15, linhaY + 4);
-          linhaY += Math.max(8, lines.length * 4);
+          pdf.setFont('helvetica', 'bold');
+          pdf.text(atendeText, pageWidth - marginRight - 15, linhaY + 5, { align: 'center' });
+          linhaY += Math.max(8, lines.length * 4 + 2);
         }
         
         yPos = linhaY + 15;
@@ -1686,18 +1687,18 @@
         if (observacoes && observacoes.trim()) {
           verificarNovaPagina(20);
           pdf.setFontSize(12);
-          pdf.setFont("helvetica", "bold");
+          pdf.setFont('helvetica', 'bold');
           pdf.setTextColor(...PDF_CONFIG.colors.primary);
           pdf.text('OBSERVAÇÕES ADICIONAIS:', marginLeft, yPos);
           yPos += 8;
           pdf.setFontSize(10);
-          pdf.setFont("helvetica", "normal");
+          pdf.setFont('helvetica', 'normal');
           pdf.setTextColor(0, 0, 0);
           const obsLines = pdf.splitTextToSize(observacoes, pageWidth - 2 * marginLeft);
           for (let i = 0; i < obsLines.length; i++) {
             if (yPos > 250) {
               const paginaAtual = pdf.internal.getNumberOfPages();
-              adicionarRodape(paginaAtual, paginaAtual + 1);
+              adicionarRodape(paginaAtual, paginaAtual);
               pdf.addPage();
               adicionarCabecalho();
               yPos = 40;
@@ -1705,37 +1706,39 @@
             pdf.text(obsLines[i], marginLeft, yPos);
             yPos += 5;
           }
+          yPos += 10;
         }
         
         // Assinatura
         verificarNovaPagina(40);
-        yPos += 10;
         
         // Obter dados do vistoriador
         const vistoriador = document.getElementById('vistoriador').value || '________________';
         const cargo = document.getElementById('cargo').value || 'Engenheiro/Responsável Técnico';
         
-        // Calcular centro da página para a linha de assinatura
-        const larguraLinhaAssinatura = 80; // 80mm de largura para a linha
-        const posicaoXCentro = (pageWidth - larguraLinhaAssinatura) / 2;
-        
         // Nome e cargo do vistoriador
         pdf.setFontSize(11);
-        pdf.setFont("helvetica", "bold");
+        pdf.setFont('helvetica', 'bold');
         pdf.setTextColor(0, 0, 0);
         pdf.text('VISTORIADOR:', marginLeft, yPos);
-        pdf.setFont("helvetica", "normal");
+        pdf.setFont('helvetica', 'normal');
         pdf.setTextColor(0, 0, 0);
         pdf.text(vistoriador, marginLeft + 45, yPos);
         yPos += 7;
         
-        pdf.setFont("helvetica", "bold");
-        pdf.setTextColor(0, 0, 0);
         pdf.text('CARGO:', marginLeft, yPos);
-        pdf.setFont("helvetica", "normal");
+        pdf.setFont('helvetica', 'normal');
         pdf.setTextColor(0, 0, 0);
         pdf.text(cargo, marginLeft + 45, yPos);
         yPos += 15;
+        
+        // Linha de assinatura
+        pdf.setLineWidth(0.5);
+        pdf.line(marginLeft, yPos, pageWidth - marginRight, yPos);
+        pdf.setFontSize(9);
+        pdf.setFont('helvetica', 'italic');
+        pdf.setTextColor(100, 100, 100);
+        pdf.text('ASSINATURA DO VISTORIADOR', pageWidth / 2, yPos - 2, { align: 'center' });
         
         // Adicionar rodapé em todas as páginas
         const totalPaginas = pdf.internal.getNumberOfPages();
@@ -1745,7 +1748,7 @@
         }
         
         // Salvar o PDF
-        const nomeArquivo = protocolo ?
+        const nomeArquivo = protocolo && protocolo !== 'Não informado' ?
           `Relatorio_Vistoria_${protocolo.replace(/\s+/g, '_')}.pdf` :
           `Relatorio_Vistoria_${new Date().getTime()}.pdf`;
         
@@ -1760,11 +1763,14 @@
     
     function limparFormulario() {
       if (confirm('Tem certeza que deseja limpar todo o formulário? Todos os dados serão perdidos.')) {
-        document.getElementById('formularioVistoria').reset();
+        document.getElementById('empreendimento').value = '';
+        document.getElementById('protocolo').value = '';
         document.getElementById('dataVistoria').value = new Date().toISOString().split('T')[0];
+        document.getElementById('observacoes').value = '';
+        document.getElementById('vistoriador').value = '';
+        document.getElementById('vistoriador2').value = '';
         document.getElementById('cargo').value = 'Engenheiro/Responsável Técnico';
         document.getElementById('cargo2').value = 'Engenheiro/Responsável Técnico';
-        document.getElementById('vistoriador2').value = '';
         
         // Resetar arrays para os valores iniciais
         condicionantes = [...condicionantesIniciais];
